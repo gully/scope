@@ -34,15 +34,24 @@ class GaussInt(object):
         self.c = c
         p = np.sqrt(self.a)
         q = self.b / (2 * p)
-        self.GI0 = np.exp(q ** 2 + self.c) * np.sqrt(np.pi) * (erf(q) + erf(p - q)) / (2 * p)
+        # self.GI0 = np.exp(q ** 2 + self.c) * np.sqrt(np.pi) * (erf(q) + erf(p - q)) / (2 * p)
+        self.GI0 = (np.sqrt(np.pi) / 2 * np.sqrt(a)) * np.exp(b**2 / (4 * a) + c) * (erf((2 * a - b) / (2 * np.sqrt(a))) + erf(b / (2 * np.sqrt(a))))
 
     def __call__(self, n):
+        a = self.a
+        b = self.b
+        c = self.c
         if n == 0:
             return self.GI0
         elif n == 1:
-            return (1 / (2 * self.a)) * (np.exp(self.c) * (1 - np.exp(self.b - self.a)) + self.b * self.GI0)
+            # return (1 / (2 * self.a)) * (np.exp(self.c) * (1 - np.exp(self.b - self.a)) + self.b * self.GI0)
+            return (np.exp(c - a) / (4 * a**(3 / 2))) * (np.sqrt(np.pi) * b * np.exp(b**2 / (4 * a) + a) * \
+                   (erf((2 * a - b) / (2 * np.sqrt(a))) + erf(b / (2 * np.sqrt(a)))))
         elif n == 2:
-            return (1 / (4 * self.a ** 2)) * (np.exp(self.c) * (self.b - (2 * self.a + self.b) * np.exp(self.b - self.a)) + (2 * self.a + self.b ** 2) * self.GI0)
+            # return (1 / (4 * self.a ** 2)) * (np.exp(self.c) * (self.b - (2 * self.a + self.b) * np.exp(self.b - self.a)) + (2 * self.a + self.b ** 2) * self.GI0)
+            return (np.exp(c - a) / (8 * a**(5/2))) * (np.sqrt(np.pi) * (2 * a + b) * np.exp(b**2 / (4 * a) + a) * \
+                   (erf((2 * a - b) / (2 * np.sqrt(a))) + erf(b / (2 * np.sqrt(a)))) - 2 * np.sqrt(a) * (np.exp(b) * \
+                   (2 * a + b) - np.exp(a) * b))
         elif n == 3:
             return (1 / (8 * self.a ** 3)) * (np.exp(self.c) * (4 * self.a + self.b ** 2 - (4 * self.a ** 2 + 4 * self.a + 2 * self.a + self.b + self.b ** 2) * np.exp(self.b - self.a)) + self.b * (6 * self.a + self.b ** 2) * self.GI0)
         else:
@@ -84,20 +93,26 @@ def PolyGaussIntegrand1D(y, cx, cy, amp, x0, y0, sx, sy, rho):
         b = ((y - y0[k]) * rho[k] * sx[k] + x0[k] * sy[k]) / ((1 - rho[k] ** 2) * sx[k] ** 2 * sy[k])
         c = -(x0[k] ** 2 / sx[k] ** 2 + (y - y0[k]) ** 2 / sy[k] ** 2 + 2 * x0[k] * (y - y0[k]) * rho[k] / (sx[k] * sy[k])) / (2 * (1 - rho[k] ** 2))
         norm = (2 * np.pi * sx[k] * sy[k] * np.sqrt(1 - rho[k] ** 2))
-        '''
 
-        a = 1 / (2 * (1 - rho ** 2) * sx ** 2)
+
+        a = 1 / (4 * (1 - rho ** 2) * sx ** 2)
         b = ((y - y0[k]) * rho * sx + x0[k] * sy) / ((1 - rho ** 2) * sx ** 2 * sy)
         c = -(x0[k] ** 2 / sx ** 2 + (y - y0[k]) ** 2 / sy ** 2 + 2 * x0[k] * (y - y0[k]) * rho / (sx * sy)) / (2 * (1 - rho ** 2))
+        '''
+
         norm = (2 * np.pi * sx * sy * np.sqrt(1 - rho ** 2))
+        a = 1 / (4 * sx ** 2 * (1 - rho ** 2))
+        b = (- 1 / (2 * (1 - rho ** 2))) * ((x0[k] / sx ** 2) - (2 * rho * (y - y0[k])) / (sx * sy))
+        c = (- 1 / (2 * (1 - rho ** 2))) * ((x0 ** 2 / (2 * sx ** 2)) + (y0 ** 2 / (2 * sy ** 2)) - (2 * rho * x0[k] * (y - y0)) / (sx * sy))
+
         GI = GaussInt(a, b, c)
 
         # Loop over the orders of the x IPV
         for n in range(N):
-            g += (amp[k] / norm) * cx[n] * GI(n)
+            g += cx[n] * GI(n)
 
     # We're done!
-    return f * g
+    return f * g * np.sum(amp) / (2 * norm ** len(amp))
 
 def Gauss2D(x, y, amp, x0, y0, sx, sy, rho):
     """A two-dimensional gaussian with arbitrary covariance."""
@@ -114,6 +129,13 @@ def PolyGaussIntegrand2D(x, y, cx, cy, amp, x0, y0, sx, sy, rho):
 
     # Dimensions
     K = len(x0)
+
+    amp = np.atleast_1d(amp)
+    x0 = np.atleast_1d(x0)
+    y0 = np.atleast_1d(y0)
+    sx = np.atleast_1d(sx)
+    sy = np.atleast_1d(sy)
+    rho = np.atleast_1d(rho)
 
     # Get the IPV functions
     f = Polynomial(y, cy)
@@ -156,6 +178,7 @@ def PixelFlux(cx, cy, amp, x0, y0, sx, sy, rho, fast=True, **kwargs):
     else:
         F = lambda y, x: PolyGaussIntegrand2D(x, y, cx, cy, amp, x0, y0, sx, sy, rho)
         res, err = dblquad(F, 0, 1, lambda x: 0, lambda x: 1, **kwargs)
+
     return res
 
 def TestIntegration():
@@ -189,7 +212,7 @@ def TestIntegration():
     print("Numerical     (%.1e s): %.9e" % (tnum, fnum()))
     print("Difference    (   %.1f x): %.9e" % (tnum/tsem, np.abs(1 - fnum()/fsem())))
 
-def PSF(psf_args, ccd_args, xpos, ypos):
+def PSF(A, psf_args, ccd_args, xpos, ypos):
     """
     Computes a stellar Point Spread Function (PSF) from given parameters.
 
@@ -221,9 +244,7 @@ def PSF(psf_args, ccd_args, xpos, ypos):
     for i in range(apsize):
         for j in range(apsize):
 
-
             # read in PSF arguments
-            A = psf_args['A']
             x0 = np.atleast_1d(psf_args['x0'])
             y0 = np.atleast_1d(psf_args['y0'])
             sx = np.atleast_1d(psf_args['sx'])
@@ -251,8 +272,8 @@ def PSF(psf_args, ccd_args, xpos, ypos):
             while psf[i][j] < 0:
                 psf[i][j] = np.sqrt(np.abs(background_level * np.random.randn()))
 
-        # multiply each cadence by inter-pixel sensitivity variation
-        psf *= inter
+    # multiply each cadence by inter-pixel sensitivity variation
+    psf *= inter
 
     return psf, target, psferr
 
@@ -342,8 +363,7 @@ def _calculate_PSF_amplitude(mag):
     """
 
     # mag/flux relation constants
-    a,b,c = 1.65e+07, 0.93, -7.35
-    amp = a * np.exp(-b * (mag+c))
+    amp = 10**(-0.4*(mag - 12))*1.74e5
     return amp
 
 if __name__ == '__main__':
