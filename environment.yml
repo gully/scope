@@ -1,0 +1,31 @@
+name: scope_new
+channels:
+  - defaults
+  - conda-forge
+dependencies:
+  - python=3.7
+  - numpy
+  - pandas
+  - matplotlib
+  - jupyter
+  - astropy>=3.1
+  - pytest-runner
+  - astroquery
+  - scipy
+  - oktopus
+  - bokeh>=1.0
+  - ipython
+  - pytest
+  - scikit-learn
+  - requests
+  - tqdm
+  - george
+  - beautifulsoup4
+  - pybind11
+  - starry
+  - celerite
+  - pip:
+      - astroML
+      - everest-pipeline
+      - fbpca
+
