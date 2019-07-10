@@ -26,4 +26,5 @@ dependencies:
   - pip:
       - astroML
       - fbpca
+      - git+https://github.com/nksaunders/scope.git
 
