@@ -1,0 +1,30 @@
+name: scope_no_ev
+channels:
+  - defaults
+  - conda-forge
+dependencies:
+  - python=3.6
+  - numpy
+  - pandas
+  - matplotlib
+  - jupyter
+  - astropy
+  - pytest-runner
+  - astroquery
+  - scipy
+  - oktopus
+  - ipython
+  - pytest
+  - scikit-learn
+  - requests
+  - tqdm
+  - george
+  - beautifulsoup4
+  - pybind11
+  - starry
+  - celerite
+  - pip:
+      - astroML
+      - fbpca
+      - git+https://github.com/nksaunders/scope.git
+
