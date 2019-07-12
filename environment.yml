@@ -32,10 +32,10 @@ dependencies:
   - sphinx-automodapi # for documentation and testing
   - graphviz
   - ghp-import
-  - nb_conda
   - pylint
   - celerite
   - flake8
+  - lightkurve
   - autopep8
   - pep8
   - pip
@@ -45,5 +45,4 @@ dependencies:
     - mkl-random # optional
     - fbpca
     - nfft
-    # manually install local development version of lightkurve!
     - everest-pipeline
